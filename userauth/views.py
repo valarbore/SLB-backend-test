@@ -17,7 +17,7 @@ from django.contrib.auth.models import User
 from .serializers import UserSerializer, ProfileSerializer, CreateUserSerializer
 from .models import Profile
 from rest_framework import generics
-from .permissions import AdminPermission, checkAdmin
+from .permissions import AdminPermission, checkTrainerOrAdmin
 
 
 @csrf_exempt
@@ -96,7 +96,7 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
         '''
         Only admin can delete user
         '''
-        res = checkAdmin(request)
+        res = checkTrainerOrAdmin(request)
         if res is not None:
             return res
         return self.destroy(request, *args, **kwargs)

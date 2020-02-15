@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 class Type(models.Model):
     name = models.CharField(max_length=50, unique=True)
     decription = models.CharField(max_length=500, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
 
 class Module(models.Model):
@@ -18,6 +20,9 @@ class Module(models.Model):
                               ('Active', 'Active'), ('Inactive', 'Inactive')])
     module_type = models.ForeignKey(
         Type, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['created']
 
 
 class Assignment(models.Model):
@@ -33,3 +38,4 @@ class Assignment(models.Model):
 
     class Meta:
         unique_together = ('module', 'trainee')
+        ordering = ['created']
