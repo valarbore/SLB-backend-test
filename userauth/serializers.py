@@ -26,7 +26,8 @@ class CreateUserSerializer(NestedUpdateMixin, serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['id', 'username', 'email',
+                  'profile', 'is_superuser', 'password']
         read_only_fields = ['is_superuser']
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -34,10 +35,14 @@ class CreateUserSerializer(NestedUpdateMixin, serializers.ModelSerializer):
         '''
         Always create a profile for new user.
         '''
-        user = User.objects.create_user(**validated_data)
+        profile_data = None
         try:
             profile_data = validated_data.pop('profile')
+        except():
+            pass
+        user = User.objects.create_user(**validated_data)
+        if profile_data is not None:
             Profile.objects.create(user=user, **profile_data)
-        except (KeyError, Profile.DoesNotExist):
+        else:
             Profile.objects.create(user=user)
         return user
