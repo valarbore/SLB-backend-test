@@ -20,13 +20,16 @@ class Module(models.Model):
                               ('Active', 'Active'), ('Inactive', 'Inactive')])
     module_type = models.ForeignKey(
         Type, on_delete=models.SET_NULL, null=True, blank=True)
+    privacy = models.CharField(max_length=20, default='Public', choices=[
+                               ('Public', 'Public'), ('Private', 'Private')])
 
     class Meta:
         ordering = ['created']
 
 
 class Assignment(models.Model):
-    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    module = models.ForeignKey(
+        Module, on_delete=models.CASCADE, related_name='module_assignment_set')
     trainee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='trainee_assignment_set')
     trainer = models.ForeignKey(

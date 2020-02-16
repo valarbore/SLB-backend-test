@@ -49,8 +49,36 @@ class TypeDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ModuleList(generics.ListCreateAPIView):
-    queryset = Module.objects.all()
     serializer_class = ModuleSerializer
+
+    def get_queryset(self):
+        """
+        Optionally restricts the returned purchases to a given user,
+        by filtering against a `username` query parameter in the URL.
+        """
+        queryset = Module.objects.all()
+        res = checkTrainerOrAdmin(self.request)
+        if res is not None:
+            # this is trainee, only can see assigned or public modules
+            uid = self.request.user.id
+            assignments = Assignment.objects.filter(trainee=uid)
+            l = [assignment.module.id for assignment in assignments]
+            assigned_modules = Module.objects.filter(pk__in=l)
+            public_modules = queryset.filter(privacy='Public')
+            queryset = public_modules.union(assigned_modules)
+        else:
+            # trainer or admin can see all the assignments or search for
+            # specific trainer/module/trainee
+            trainer = self.request.query_params.get('trainer', None)
+            if trainer is not None:
+                queryset = queryset.filter(trainer=trainer)
+            trainee = self.request.query_params.get('trainee', None)
+            if trainee is not None:
+                queryset = queryset.filter(trainee=trainee)
+            module = self.request.query_params.get('module', None)
+            if module is not None:
+                queryset = queryset.filter(module=module)
+        return queryset
 
     def post(self, request, *args, **kwargs):
         res = checkAdmin(request)

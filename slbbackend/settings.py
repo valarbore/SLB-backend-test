@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'userauth.apps.UserauthConfig',
     'trainmodules.apps.TrainmodulesConfig',
+    'performance.apps.PerformanceConfig',
 ]
 
 REST_FRAMEWORK = {
