@@ -20,8 +20,9 @@ class Module(models.Model):
                               ('Active', 'Active'), ('Inactive', 'Inactive')])
     module_type = models.ForeignKey(
         Type, on_delete=models.SET_NULL, null=True, blank=True)
-    privacy = models.CharField(max_length=20, default='Public', choices=[
+    privacy = models.CharField(max_length=20, default='Private', choices=[
                                ('Public', 'Public'), ('Private', 'Private')])
+    pass_score = models.FloatField(default=0)
 
     class Meta:
         ordering = ['created']
@@ -38,6 +39,7 @@ class Assignment(models.Model):
     updated = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=30, default='in progress', choices=[
                               ('in progress', 'in progress'), ('completed', 'completed')])
+    best_score = models.FloatField(default=0)
 
     class Meta:
         unique_together = ('module', 'trainee')

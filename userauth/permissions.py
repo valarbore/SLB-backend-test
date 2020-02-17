@@ -17,7 +17,7 @@ class AdminPermission(permissions.BasePermission):
         return request.user.is_superuser
 
 
-class TrainerPermission(permissions.BasePermission):
+class TrainerOrAdminPermission(permissions.BasePermission):
     """
     Check whether user is the admin
     """
@@ -32,7 +32,7 @@ class TrainerPermission(permissions.BasePermission):
 
 def checkAdmin(request):
     if request.user.is_superuser is False:
-        return Response({"detail": "Authentication credentials were not provided."}, HTTP_401_UNAUTHORIZED)
+        return Response({"detail": "No authority."}, HTTP_401_UNAUTHORIZED)
     return None
 
 
@@ -42,7 +42,7 @@ def checkTrainerOrAdmin(request):
     except(KeyError, Profile.DoesNotExist):
         return Response({"detail": "Profile not found"}, HTTP_404_NOT_FOUND)
     if profile.is_trainer is False and request.user.is_superuser is False:
-        return Response({"detail": "Authentication credentials were not provided."}, HTTP_401_UNAUTHORIZED)
+        return Response({"detail": "No authority."}, HTTP_401_UNAUTHORIZED)
     return None
 
 

@@ -10,14 +10,16 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_200_OK,
-    HTTP_401_UNAUTHORIZED
+    HTTP_401_UNAUTHORIZED,
+    HTTP_204_NO_CONTENT
 )
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, ProfileSerializer, CreateUserSerializer
 from .models import Profile
 from rest_framework import generics
-from .permissions import AdminPermission, checkTrainerOrAdmin
+from .permissions import AdminPermission,  TrainerOrAdminPermission, checkAdmin, checkTrainerOrAdmin
+from django.db.models import Q
 
 
 @csrf_exempt
@@ -45,6 +47,18 @@ def login(request):
     token, _ = Token.objects.get_or_create(user=user)
     return Response({'token': token.key},
                     status=HTTP_200_OK)
+
+
+@csrf_exempt
+@api_view(["DELETE"])
+def logout(request):
+    '''
+    logout delete the token
+    '''
+    token = Token.objects.get(user=request.user)
+    token.delete()
+    return Response(
+        status=HTTP_204_NO_CONTENT)
 
 
 def findUser(request):
@@ -89,22 +103,62 @@ def changeRole(request):
 
 
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    '''
+    Trainer/Admin/Self can get and update user
+    Admin/Self can delete user
+    '''
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def get(self, request, *args, **kwargs):
+        if kwargs.get('pk') != request.user.id:
+            res = checkTrainerOrAdmin(request)
+            if res is not None:
+                return res
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        if kwargs.get('pk') != request.user.id:
+            res = checkTrainerOrAdmin(request)
+            if res is not None:
+                return res
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        if kwargs.get('pk') != request.user.id:
+            res = checkTrainerOrAdmin(request)
+            if res is not None:
+                return res
+        return self.partial_update(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
-        '''
-        Only admin can delete user
-        '''
-        res = checkTrainerOrAdmin(request)
-        if res is not None:
-            return res
+        if kwargs.get('pk') != request.user.id:
+            res = checkAdmin(request)
+            if res is not None:
+                return res
         return self.destroy(request, *args, **kwargs)
 
 
 class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [TrainerOrAdminPermission]
+
+    def get_queryset(self):
+        queryset = User.objects.all()
+        # filter users according to role
+        role = self.request.query_params.get('role', None)
+        if role == 'trainee':
+            queryset = queryset.filter(
+                Q(profile__is_trainer=False) | Q(is_superuser=False))
+        elif role == 'trainer':
+            queryset = queryset.filter(profile__is_trainer=True)
+        elif role == 'admin':
+            queryset = queryset.filter(is_superuser=True)
+        # filter users according to username
+        username = self.request.query_params.get('username', None)
+        if username is not None:
+            queryset = queryset.filter(username=username)
+        return queryset
 
 
 class CreateUser(generics.CreateAPIView):
